@@ -1,246 +1,308 @@
-# /apply - Drafter-Reviewer Job Application Workflow
+# /apply - Evidence-Grounded Drafter-Reviewer Job Application Workflow
 
-You are orchestrating a two-agent job application workflow. The job posting is provided below as `$ARGUMENTS` (either a URL or pasted text).
+You are orchestrating a job-application workflow. The job posting is provided as `$ARGUMENTS` (URL or pasted text).
 
-Follow these steps **exactly in order**. Do not skip steps.
+Follow the steps in order. The governing resume standard is:
 
-**Token-efficiency rules for this workflow:**
-- Never re-Read a file whose contents are already in your context from an earlier step. If you read it in Step 1, it is still available in Step 2.
-- When dispatching the reviewer agent, pass draft content **inline in the agent prompt** rather than asking the agent to Read files you already have in memory.
-- Run the full verification checklist exactly once, at the end (Step 6). The reviewer focuses on content critique, not verification.
-- Step 5 (compile and inspect PDFs) is mandatory and non-skippable — LaTeX page-break decisions are unpredictable, and `.tex` files that look fine often produce broken PDFs (orphaned entry titles, cover letters spilling to page 2, bullet fonts mismatching).
+`.claude/skills/job-application-assistant/08-resume-creation-standard.md`
+
+If older instructions conflict with that standard, the governing standard wins.
+
+## Operating rules
+
+- Do not fabricate skills, metrics, credentials, achievements, ownership, or scope.
+- Do not strengthen an ambiguous claim. Downgrade it until evidence supports it.
+- Use employer terminology only when it accurately describes candidate evidence.
+- Tailoring is evidence selection plus accurate reframing, not keyword insertion.
+- Preserve the user's ability to reject substantive AI edits.
+- Do not re-read files already in context unless an edit failed or source verification is required.
+- Compile and visually inspect final PDFs before presentation.
 
 ---
 
-## Step 0: Parse Input
+## Step 0 - Parse the Vacancy
 
-- If `$ARGUMENTS` looks like a URL, use `WebFetch` to retrieve the job posting content.
-- If it is pasted text, use it directly.
-- Extract: **company name**, **role title**, **department** (if mentioned), **location**, and **language** of the posting (Danish or English).
-- Store these for use throughout the workflow.
+If `$ARGUMENTS` is a URL, fetch it. Otherwise use the pasted text directly.
+
+Extract:
+- company;
+- role title;
+- department/team if named;
+- location/work arrangement;
+- posting language;
+- required qualifications;
+- preferred qualifications;
+- core responsibilities;
+- domain knowledge;
+- named tools/platforms;
+- leadership/scope expectations;
+- eligibility or knockout criteria; and
+- behavioral/cultural signals.
+
+Create a requirement map. Mark importance as REQUIRED, PREFERRED, or CONTEXTUAL.
 
 ---
 
-## Step 1: DRAFTER - Evaluate Fit
+## Step 1 - Evaluate Fit and Build the Evidence Map
 
-Read the evaluation framework:
+Read:
+- `.claude/skills/job-application-assistant/08-resume-creation-standard.md`
 - `.claude/skills/job-application-assistant/04-job-evaluation.md`
 - `.claude/skills/job-application-assistant/01-candidate-profile.md`
 
-Using the framework from `04-job-evaluation.md`, evaluate the job posting against the candidate's profile. If the salary lookup tool is configured, run:
+Use available source material to map each important vacancy requirement to candidate evidence.
 
-```bash
-python salary_lookup.py "<Company Name>" --json
-```
+Assign one evidence status:
+- `VERIFIED_DIRECT`
+- `VERIFIED_EQUIVALENT`
+- `PARTIAL`
+- `UNVERIFIED`
+- `UNSUPPORTED_GAP`
 
-If the posting specifies a city, add `--city "<City>"` to narrow results. Parse the JSON output and include the salary benchmark in the evaluation. If the tool is not configured or returns an error, skip the salary benchmark.
+For every REQUIRED requirement, show:
+1. requirement;
+2. evidence status;
+3. supporting experience/source;
+4. whether it should appear explicitly in the resume; and
+5. any boundary that must not be overstated.
 
-Present the evaluation to the user with:
+Then present:
+1. skills match;
+2. experience/domain match;
+3. behavioral/culture match;
+4. material gaps;
+5. salary benchmark if configured; and
+6. overall fit recommendation.
 
-1. **Skills match** - which required/preferred skills match vs. gaps
-2. **Experience match** - how work history maps to the role
-3. **Behavioral/culture match** - how behavioral profile fits the role/company culture
-4. **Salary benchmark** - salary index for the company (if available)
-5. **Overall fit score** and recommendation (strong fit / moderate fit / weak fit)
+A fit score may summarize the analysis, but it must not replace the evidence map.
 
-After presenting the evaluation, ask the user:
-> "Should I proceed with drafting the CV and cover letter for this role?"
-
-**If the user says no, stop here.** If yes, continue to Step 2.
+Ask the user whether to proceed. If no, stop.
 
 ---
 
-## Step 2: DRAFTER - Draft CV + Cover Letter
+## Step 2 - Establish the Foundational Resume State
 
-You already have `01-candidate-profile.md` and `04-job-evaluation.md` in context from Step 1. **Do not re-read them.**
-
-Read only the reference files you do not yet have:
+Read:
 - `.claude/skills/job-application-assistant/03-writing-style.md`
 - `.claude/skills/job-application-assistant/05-cv-templates.md`
 - `.claude/skills/job-application-assistant/06-cover-letter-templates.md`
 
-Also read the most recent existing CV and cover letter files for concrete structural reference (one of each is enough):
-- Read any existing `cv/main_*.tex` file as a LaTeX template reference
-- Read any existing `cover_letters/cover_*.tex` or `cover_letters/Cover_*.tex` file as a template reference
+Read the most relevant existing CV only as a structural and candidate-history reference. Do not assume every claim in an old CV is current or fully supported if it conflicts with the candidate profile or source evidence.
 
-### CV (`cv/main_<company>.tex`)
-- Always in **English**
-- Follow the moderncv/banking format from `05-cv-templates.md`
-- Tailor the profile statement and experience bullets to the specific role
-- Reframe skills and achievements to match job requirements
-- Keep to 2 pages
+Before vacancy-specific wording changes, check the foundational resume against the governing standard:
+- factual accuracy;
+- standard section structure;
+- ATS-safe single-column reading order;
+- readable bullet length;
+- relevance-weighted evidence;
+- no obsolete references section unless required;
+- no unsupported claims; and
+- no compression solely to satisfy an arbitrary page count.
 
-### Cover Letter (`cover_letters/cover_<company>_<role>.tex`)
-- **Match the language of the job posting** (Danish posting -> Danish cover letter, English posting -> English cover letter)
-- Follow the structure from `06-cover-letter-templates.md`
-- Use the `cover.cls` template
-- Tailor the opening paragraph to the specific role and company
-- Address to a named person if available in the posting, otherwise "Dear Hiring Manager" (or equivalent in posting language)
-- Keep to approximately one page
-- Any mention of agentic coding or AI tooling must reference **Claude Code** by name
-
-Write both files to disk. Keep the exact text of both drafts in working memory — you will pass them inline to the reviewer in Step 3 and revise them in Step 4 without re-reading.
+For the current experienced-candidate workflow, two pages are the normal target, not a hard technical gate.
 
 ---
 
-## Step 3: REVIEWER - Research & Critique
+## Step 3 - Select Evidence, Then Draft the Tailored Resume
 
-Use the **Agent tool** to spawn a `general-purpose` reviewer agent. The reviewer gets a fresh context, so pass the drafts **inline in the prompt** below (do not make the reviewer Read them). Scope the reviewer's file reads to content-critique essentials only — the reviewer does not need the LaTeX template files (`05`, `06`) to critique content, since those govern structural/LaTeX concerns the drafter already applied.
+Create `cv/main_<company>.tex`.
 
-Replace `<COMPANY>`, `<ROLE>`, `<INSERT_JOB_POSTING_TEXT_HERE>`, `<INSERT_CV_DRAFT_HERE>`, and `<INSERT_COVER_LETTER_DRAFT_HERE>` with actual values before dispatching.
+Do not start by rewriting every existing bullet. First select the strongest evidence for the highest-value vacancy requirements.
 
-```
-You are a hiring manager proxy reviewing a job application. Your job is to make the application as targeted and compelling as possible.
+For each selected claim, retain its evidence status in working notes.
 
-## Your Tasks
+### Resume rules
 
-### 1. Research the Company
-Use WebSearch and WebFetch to research:
-- The company's website, mission, and recent news
-- The specific department or team (if mentioned in the posting)
-- Any recent projects, press releases, or strategic initiatives relevant to the role
-- Company culture and values
+- Always in English unless the user explicitly requests otherwise.
+- Follow the governing standard and `05-cv-templates.md`.
+- Keep the summary concise and role-specific.
+- Put concrete evidence in experience bullets rather than relying on abstract summary claims.
+- Use the employer's wording when accurate.
+- Use metrics only when source-supported.
+- State partial exposure narrowly.
+- Do not claim unsupported gaps.
+- Keep most bullets to one or two lines when rendered.
+- Front-load results, scope, or differentiating facts.
 
-### 2. Read Reference Materials (content-critique only)
-Read these four files — and only these — to ground your critique:
-- `.claude/skills/job-application-assistant/01-candidate-profile.md`
-- `.claude/skills/job-application-assistant/02-behavioral-profile.md` — use this specifically to check whether the cover letter's voice matches the candidate's natural register. A "Collaborator" PI profile, for example, should not be given a combative, solo-hero tone; a "Persuader" profile should not be given over-hedged, apologetic phrasing.
-- `.claude/skills/job-application-assistant/03-writing-style.md`
-- `.claude/skills/job-application-assistant/04-job-evaluation.md`
+### Vacancy coverage check
 
-Do NOT read `05-cv-templates.md` or `06-cover-letter-templates.md` — those govern LaTeX structure the drafter already applied and are not needed for content critique.
+Before moving on, confirm that each high-value `VERIFIED_DIRECT` or `VERIFIED_EQUIVALENT` requirement is either:
+- stated plainly in the resume; or
+- intentionally omitted for a documented reason such as low relevance or space.
 
-### 3. Drafts to Review
-Both drafts are provided inline below. Do NOT use the Read tool on the draft files — use these exact texts.
+Do not use repeated keywords as a substitute for evidence.
 
-<CV_DRAFT file="cv/main_<COMPANY>.tex">
-<INSERT_CV_DRAFT_HERE>
-</CV_DRAFT>
+---
 
-<COVER_LETTER_DRAFT file="cover_letters/cover_<COMPANY>_<ROLE>.tex">
-<INSERT_COVER_LETTER_DRAFT_HERE>
-</COVER_LETTER_DRAFT>
+## Step 4 - Draft the Cover Letter
 
-### 4. Job Posting
-<JOB_POSTING>
-<INSERT_JOB_POSTING_TEXT_HERE>
-</JOB_POSTING>
+Create `cover_letters/cover_<company>_<role>.tex`.
 
-### 5. Produce Feedback
+- Match the language of the posting unless the user requests otherwise.
+- Follow `03-writing-style.md` and `06-cover-letter-templates.md`.
+- Connect specific source-supported experience to the role.
+- Keep claims consistent with the resume evidence map.
+- If the role has a real gap, do not disguise it. Emphasize adjacent evidence only when the relationship is defensible.
+- Verify external company-specific claims before including them.
 
-Return your feedback in **two parts**:
+---
 
-**Part A — Structured edits (preferred format whenever possible):**
-A JSON array of concrete edits the drafter can apply directly without re-reading the files. Each edit is an object:
+## Step 5 - Independent Reviewer Critique
+
+Use a reviewer agent with the job posting, evidence map, resume draft, and cover-letter draft supplied inline.
+
+The reviewer must return two outputs.
+
+### Part A - Grounded structured edits
+
+For each proposed substantive edit:
+
 ```json
 {
-  "file": "cv/main_<COMPANY>.tex" | "cover_letters/cover_<COMPANY>_<ROLE>.tex",
-  "old_string": "<exact text currently in the draft>",
-  "new_string": "<replacement text>",
-  "reason": "<one-line rationale: keyword match / company angle / reframing / style>"
+  "file": "cv/main_<company>.tex",
+  "old_string": "exact current text",
+  "new_string": "proposed replacement",
+  "reason": "why this improves evidence, fit, readability, or accuracy",
+  "requirement": "vacancy requirement addressed, if any",
+  "evidence_status": "VERIFIED_DIRECT | VERIFIED_EQUIVALENT | PARTIAL | UNVERIFIED | UNSUPPORTED_GAP"
 }
 ```
-Only use this format when you can quote the exact `old_string` from the drafts above. Make `old_string` unique — include enough surrounding context so it matches exactly once per file.
 
-**Part B — Narrative suggestions (for judgment calls that are not mechanical edits):**
-Prose suggestions grouped by category. Produce each category even if your finding is "no issues" — silence on a category can be mistaken for skipping it.
-- **Missed keywords/requirements** — what to add and roughly where, if it cannot be expressed as a clean string replacement
-- **Company/department-specific angles** — connections between experience and the company's strategic priorities, based on your research
-- **Action-oriented reframing** — identify passive, generic, or low-energy statements and suggest action-oriented rewrites. Use this category especially for structural weakness that doesn't fit a single-sentence swap (e.g., "the whole opening paragraph reads as passive — restructure around your single strongest match to the posting").
-- **Tone and style issues** — check against `03-writing-style.md` AND `02-behavioral-profile.md`. Flag any issues with tone, formality, or voice (cliches, hedging, over-humility, inconsistent register), and specifically flag any mismatch between the letter's voice and the candidate's natural register as described in the behavioral profile.
+Do not propose wording that upgrades `PARTIAL`, `UNVERIFIED`, or `UNSUPPORTED_GAP` into a stronger claim.
 
-**CRITICAL RULE:** All suggestions must be grounded in actual profile data. Do NOT suggest fabricating skills, experience, or achievements. If a requirement is a gap, say so honestly and suggest how to frame adjacent experience instead.
+### Part B - Narrative review
 
-Do **not** run a verification checklist — the drafter will do that in the final step. Focus on content critique.
+Address every category:
+- missed supported requirements;
+- unsupported or overstated claims;
+- stronger evidence that should replace weaker evidence;
+- company/department-specific angles;
+- action-oriented reframing;
+- tone/style issues;
+- redundancy and low-signal content; and
+- interview-defensibility risks.
 
-Return Part A and Part B together as a single structured message.
-```
-
----
-
-## Step 4: DRAFTER - Revise Based on Feedback
-
-Once the reviewer agent returns its feedback:
-
-1. **Apply Part A (structured edits) directly with the Edit tool.** Do NOT re-read the draft files — you already have them in context from Step 2, and the reviewer's `old_string` values were quoted from that same text. For each edit in the JSON array, call `Edit` with the given `file`, `old_string`, and `new_string`. Skip any whose rationale would require fabricating content.
-2. **Apply Part B (narrative suggestions)** using judgment. These need interpretation, not mechanical replacement. Walk through every Part B category the reviewer returned and address it:
-   - **Missed keywords/requirements:** add the keyword or capability where it fits naturally in the CV or cover letter. Prefer the experience bullets (concrete evidence) over the profile statement (abstract claim).
-   - **Company/department-specific angles:** weave the reviewer's research into the cover letter opening or motivation paragraph. Verify every company claim via WebFetch/WebSearch before including it — do not trust reviewer research at face value.
-   - **Action-oriented reframing:** rewrite passive or generic phrasing (CV profile statement, cover letter opening, bullet leads). Structural weakness that the reviewer flagged without a clean JSON edit lives here.
-   - **Tone and style issues:** apply the writing-style-guide fixes (no em-dashes, no cliches, no apologetic hedging, consistent first-person active voice).
-   Use Edit for targeted changes; only re-read a file if an edit fails because the surrounding text has shifted.
-3. Do NOT incorporate any suggestion that would fabricate skills or experience. If a posting requirement is a genuine gap, acknowledge it honestly and frame adjacent experience instead.
-
-After all edits are applied, the two files on disk are the final drafts.
+The reviewer may recommend removing a claim if it cannot be defended.
 
 ---
 
-## Step 5: DRAFTER - Compile & Inspect PDFs (MANDATORY)
+## Step 6 - Revise With Evidence Boundaries Intact
 
-**Never skip this step.** The `.tex` files looking fine is not sufficient — LaTeX page-break decisions are unpredictable and commonly produce broken layouts (orphaned job titles separated from their bullets, cover letters spilling to 2 pages, bullet fonts not matching body text). Compile both documents and visually verify the PDFs before presenting.
+Apply reviewer edits only when they remain consistent with source evidence.
 
-### 5a. Compile
+For every reviewer recommendation:
+- accept if grounded and useful;
+- modify if directionally useful but too strong;
+- reject if unsupported; or
+- flag for user confirmation if evidence may exist but is not available.
+
+No `UNVERIFIED` claim may survive into the final resume.
+
+When cutting for space, use relevance-weighted cutting from `05-cv-templates.md`. Do not mechanically cut the oldest content first if older evidence is more relevant.
+
+---
+
+## Step 7 - Compile and Visually Inspect PDFs
+
+Compile:
 
 ```bash
 cd cv && lualatex -interaction=nonstopmode main_<company>.tex
 cd ../cover_letters && xelatex -interaction=nonstopmode cover_<company>_<role>.tex
 ```
 
-- CV uses **lualatex** — pdflatex fails on modern MiKTeX with fontawesome5 font-expansion errors. lualatex handles the same sources cleanly.
-- Cover letter uses **xelatex** — cover.cls requires fontspec.
+Inspect every rendered page.
 
-If either compile fails, fix the error and re-compile until clean.
+### Resume checks
 
-### 5b. Inspect layout
+- page count is justified by relevant content;
+- for this experienced-candidate workflow, two pages are normally preferred but not mandatory;
+- no orphaned role/education titles;
+- no isolated section headings;
+- no clipping or overlap;
+- no awkward whitespace caused by manual spacing;
+- most bullets remain one or two lines;
+- contact information is visible in the body layout;
+- standard headings and dates are consistent; and
+- PDF text is selectable/extractable.
 
-Read both PDFs via the Read tool and verify:
+### Cover letter checks
 
-**CV (`cv/main_<company>.pdf`):**
-- [ ] Exactly 2 pages (not 1, not 3)
-- [ ] No orphaned `\cventry` titles — a job/education title line must never sit alone at the bottom of page 1 with its bullets on page 2. This is the most common failure.
-- [ ] Section headings are not isolated at the top of page 2 with only 1-2 lines below
-- [ ] No awkward whitespace gaps
+- approximately one page unless content or local convention justifies otherwise;
+- signature block is visible;
+- no clipping or overflow;
+- typography is consistent.
 
-**Cover letter (`cover_letters/cover_<company>_<role>.pdf`):**
-- [ ] Exactly 1 page
-- [ ] Signature block visible, not cut off or pushed to a second page
-- [ ] Bullet list font matches surrounding body text (both should be Raleway-Medium)
-
-### 5c. Iterate until clean
-
-If the layout has problems, edit the `.tex` files and recompile. Common fixes (see `05-cv-templates.md` and `06-cover-letter-templates.md` for full details):
-
-- **Orphaned CV entry title:** `\usepackage{needspace}` in preamble, then `\needspace{5\baselineskip}` immediately before the problematic `\cventry`
-- **CV spills to page 3 with only a trailing section:** `\enlargethispage{2-3\baselineskip}` before a late section
-- **Substantial content on page 3:** cut content using **relevance-weighted cutting** (see `05-cv-templates.md` → "Relevance-weighted cutting"). Score each candidate line by (a) relevance to THIS posting's keywords and responsibilities, (b) uniqueness (is it duplicated elsewhere?), (c) narrative load (does the cover letter depend on it?). Cut the lowest-total-score line first, regardless of section. Do NOT mechanically apply a static section-based priority order — an older-role bullet that hits posting keywords is worth more than a recent-role bullet that does not.
-- **Cover letter itemize breaks compile or uses wrong font:** close `\lettercontent{}` before the list, wrap the list in `{\raggedright\fontspec[Path = OpenFonts/fonts/raleway/]{Raleway-Medium}\fontsize{11pt}{13pt}\selectfont \begin{itemize}...\end{itemize}\par}`
-- **Cover letter spills to 2 pages:** trim using the same relevance-weighted logic. First cut: sentences that restate what a bullet already said. Second cut: a bullet that does not hit posting keywords. Last resort: a bullet that does hit posting keywords. Never reduce geometry or line spacing.
-
-Do not proceed to Step 6 until both PDFs pass inspection.
-
-### 5d. Clean up build artifacts
-
-After the final clean compile, delete the `.aux`, `.log`, `.out` files (keep the `.tex` and `.pdf`).
+Do not reduce readability merely to hit page count.
 
 ---
 
-## Step 6: Present Final Output
+## Step 8 - Final Quality Gates
 
-Run the full verification checklist from `CLAUDE.md` now — this is the **only** verification pass in the workflow. Re-read both files once here to verify final state on disk matches your mental model after the Step 4 and Step 5 edits.
+Run each gate from `08-resume-creation-standard.md`.
 
-### Verification Checklist
-Report pass/fail for each item in the CLAUDE.md verification checklist (factual accuracy, targeting, consistency, quality).
+### Gate A - Factual integrity
+- all material claims supported;
+- no fabricated metrics/skills/ownership;
+- dates, titles, employers, credentials, and contact details correct;
+- no `UNVERIFIED` claim remains.
 
-### Key Tailoring Decisions
-Summarize 3-5 key decisions made to tailor the application:
-- What was emphasized and why
-- What company-specific angles were incorporated
-- What the reviewer suggested that was most impactful
-- Any gaps that were acknowledged or reframed
+### Gate B - Vacancy alignment
+- supported required qualifications stated plainly;
+- genuine gaps are not disguised;
+- strongest evidence is prominent;
+- employer terminology used only when accurate.
 
-### Files Created
-List the files written:
-- `cv/main_<company>.tex`
-- `cover_letters/cover_<company>_<role>.tex`
+### Gate C - Human readability
+- strong first page;
+- standard headings;
+- concise bullets;
+- outcomes front-loaded;
+- no filler.
 
-Tell the user: "Both files are ready for your review. Open them to check the final output before compiling."
+### Gate D - Parsing-risk reduction
+- single-column reading order;
+- no essential information in graphics, floating text boxes, or layout tables;
+- standard dates/headings;
+- text-based PDF.
+
+### Gate E - Interview defensibility
+- every high-salience metric and ownership claim has a clear proof point;
+- claim boundaries are known;
+- interview-defense sheet generated.
+
+---
+
+## Step 9 - Generate the Interview-Defense Sheet
+
+Create a concise supporting artifact based on the final resume.
+
+For each high-salience claim, include:
+- exact final claim;
+- evidence/source;
+- likely interviewer follow-up;
+- concise proof point or STAR example; and
+- boundary not to overstate.
+
+Prioritize:
+- numbers;
+- leadership/ownership claims;
+- unusual achievements;
+- technologies central to the posting;
+- domain expertise; and
+- claims the reviewer substantially strengthened.
+
+---
+
+## Step 10 - Present Final Output
+
+Provide:
+1. final fit verdict;
+2. material gaps, if any;
+3. 3-5 key tailoring decisions;
+4. pass/fail results for the five quality gates;
+5. files created;
+6. interview-defense summary; and
+7. any claims that still require user confirmation before submission.
+
+The user has final authority over all substantive application content.
