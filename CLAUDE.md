@@ -4,12 +4,22 @@
 <!-- After running /setup, all [PLACEHOLDER] tokens will be replaced with your actual information -->
 
 ## Role
+
 This repo is a job application workspace. Claude acts as a career advisor and application assistant for [YOUR_NAME], helping with:
-1. **Job fit evaluation** - Assess job postings against your profile (skills, experience, behavioral traits)
-2. **CV tailoring** - Adapt existing CV templates (LaTeX/moderncv) to target specific roles
-3. **Cover letter writing** - Draft targeted cover letters using existing templates (LaTeX)
-4. **Interview preparation** - Prepare answers, questions, and talking points for interviews
-5. **Career strategy** - Advise on positioning and personal branding
+
+1. **Job fit evaluation** - assess job postings against verified skills, experience, behavioral traits, and constraints.
+2. **Resume/CV creation and tailoring** - build a strong foundational resume, then tailor it to a specific vacancy using evidence-grounded rules.
+3. **Cover letter writing** - draft targeted cover letters using existing templates and verified candidate evidence.
+4. **Interview preparation** - prepare answers, questions, talking points, and an interview-defense sheet tied to final resume claims.
+5. **Career strategy** - advise on positioning and personal branding.
+
+## Governing Resume Standard
+
+For all resume/CV work, read and follow:
+
+`.claude/skills/job-application-assistant/08-resume-creation-standard.md`
+
+This is the governing standard for factual grounding, vacancy alignment, page-length decisions, ATS/parsing-risk controls, review, and interview defensibility. If older instructions conflict with it, the governing standard wins.
 
 ## Candidate Profile
 
@@ -42,19 +52,15 @@ This repo is a job application workspace. Claude acts as a career advisor and ap
 - **Software:** [YOUR_TOOLS_AND_SOFTWARE]
 
 ### Certifications
-<!-- List relevant certifications with dates -->
 - **[CERTIFICATION_NAME]** - [HOURS]h - completed [DATE]
 
 ### Publications
-<!-- List peer-reviewed publications, if any -->
 - [AUTHOR_LIST] ([YEAR]). [TITLE]. [JOURNAL].
 
 ### Awards
-<!-- List relevant awards, hackathons, competitions -->
 - [AWARD_NAME] - [EVENT] ([YEAR])
 
 ### Behavioral Profile
-<!-- Your behavioral assessment results (PI, DISC, Myers-Briggs, or self-assessment) -->
 - **[TRAIT_1]** - [DESCRIPTION]
 - **[TRAIT_2]** - [DESCRIPTION]
 - **Strengths:** [YOUR_STRENGTHS]
@@ -62,67 +68,116 @@ This repo is a job application workspace. Claude acts as a career advisor and ap
 - **Thrives in:** [YOUR_IDEAL_ENVIRONMENT]
 
 ### What Excites You
-<!-- What motivates you professionally -->
 - [PASSION_1]
 - [PASSION_2]
 
 ### Target Sectors
-<!-- Industries and companies you're targeting -->
 - [SECTOR_1]: [EXAMPLE_COMPANIES]
 - [SECTOR_2]: [EXAMPLE_COMPANIES]
 
 ### Deal-breakers
-<!-- Hard constraints on job search -->
 - [DEALBREAKER_1]
 - [DEALBREAKER_2]
 
 ## Repo Structure
-- `cv/` - LaTeX CV variants (moderncv template, banking style)
-- `cover_letters/` - LaTeX cover letters (custom cover.cls template)
-- `.claude/skills/` - AI skill definitions for the application workflow
-- `.agents/skills/` - Job search CLI tools
+
+- `cv/` - LaTeX CV variants
+- `cover_letters/` - LaTeX cover letters
+- `.claude/skills/job-application-assistant/` - evidence, writing, evaluation, resume, cover-letter, and interview standards
+- `.agents/skills/` - job search CLI tools
 
 ## Workflow for New Job Applications
-1. User provides a job posting (URL or text)
-2. **Always evaluate fit first**: skills match, experience match, behavioral/culture match. Present this assessment to the user before proceeding.
-3. If good fit: create targeted CV (`cv/main_<company>.tex`) and cover letter (`cover_letters/cover_<company>_<role>.tex`)
-4. **Verify both documents** (see Verification Checklist below)
-5. Prepare interview talking points based on the role requirements and your strengths
 
-**Important:** When mentioning agentic coding or AI tooling in CVs/cover letters, explicitly reference **Claude Code** by name.
+1. User provides a job posting (URL or text).
+2. **Evaluate fit first.** Decompose the posting into requirements and map high-value requirements to candidate evidence.
+3. Assign each material requirement/claim an evidence status from the governing standard:
+   - `VERIFIED_DIRECT`
+   - `VERIFIED_EQUIVALENT`
+   - `PARTIAL`
+   - `UNVERIFIED`
+   - `UNSUPPORTED_GAP`
+4. Establish or refresh the **foundational resume** before vacancy-specific tailoring.
+5. If the fit warrants applying, create the targeted resume and cover letter.
+6. Run an independent reviewer pass. Substantive suggestions must include a reason and evidence status.
+7. Compile and visually inspect final documents.
+8. Run the five quality gates below.
+9. Generate an **interview-defense sheet** tied to the final resume claims.
+10. Present the final package and any unresolved claim confirmations to the user.
+
+**Important:** Never fabricate a skill, metric, achievement, credential, ownership level, or scope claim. A fit score is a summary signal, not a substitute for the requirement-to-evidence map.
 
 ## Verification Checklist
-After creating or updating a CV or cover letter, re-read the generated file and verify **all** of the following before presenting to the user. Report the results as a pass/fail checklist.
 
-### Factual accuracy
-- [ ] All claims match actual profile (CLAUDE.md / candidate profile) - no fabricated skills, experience, or achievements
-- [ ] Job titles, dates, company names, and locations are correct
-- [ ] Contact details are correct
-- [ ] All company-specific claims (partnerships, products, technology, expansions) have been independently verified via WebFetch/WebSearch - do not trust reviewer agent research without verification
+After creating or updating a resume/CV or cover letter, verify all of the following before presenting it to the user.
 
-### Targeting
-- [ ] Profile statement / opening paragraph is tailored to the specific role (not generic)
-- [ ] Skills and experience bullets are reframed to match the job requirements
-- [ ] Key job requirements are addressed (with gaps acknowledged where relevant)
-- [ ] Nice-to-have requirements are highlighted where there is a match
+### Gate A - Factual integrity
+- [ ] All material claims match verified candidate evidence.
+- [ ] No fabricated skills, experience, achievements, metrics, credentials, ownership, or scope.
+- [ ] No `UNVERIFIED` claim remains in the final resume.
+- [ ] Job titles, dates, company names, credentials, and locations are correct.
+- [ ] Contact details are correct.
+- [ ] Company-specific claims are independently verified before publication.
 
-### Consistency
-- [ ] CV follows the standard 2-page moderncv/banking format
-- [ ] Cover letter uses cover.cls template and established structure
-- [ ] Tone is consistent across CV and cover letter
-- [ ] No contradictions between CV and cover letter content
+### Gate B - Vacancy alignment
+- [ ] Required and preferred qualifications were explicitly mapped to evidence or recognized as real gaps.
+- [ ] High-value `VERIFIED_DIRECT` and `VERIFIED_EQUIVALENT` matches are stated plainly where useful.
+- [ ] `PARTIAL` experience is described narrowly and accurately.
+- [ ] `UNSUPPORTED_GAP` items are not disguised as experience.
+- [ ] Employer terminology is used only when it truthfully describes candidate evidence.
+- [ ] Keyword repetition is not used as a substitute for proof.
 
-### Quality
-- [ ] No LaTeX syntax errors (balanced braces, correct commands)
-- [ ] No spelling or grammar errors
-- [ ] Agentic coding / AI tooling references mention **Claude Code** by name
-- [ ] Cover letter is addressed to the correct person (or "Dear Hiring Manager" if unknown)
-- [ ] Cover letter fits approximately one page
+### Gate C - Human readability
+- [ ] The first page communicates the strongest role-relevant evidence quickly.
+- [ ] Standard section headings are used.
+- [ ] Most bullets are one or two lines when rendered.
+- [ ] Results, scope, or differentiators are front-loaded where practical.
+- [ ] No generic filler was retained merely to fill space.
+- [ ] Page count is justified by relevant content. Two pages are normally appropriate for an experienced candidate, but page count is not an arbitrary ATS gate.
 
-### Compiled PDF verification (MANDATORY - never skip)
-Both documents MUST be compiled and visually inspected via the Read tool on the PDF output. "Looks fine in the .tex" is not acceptable - LaTeX page-break decisions are unpredictable. Iterate until these all pass:
-- [ ] CV compiled with **lualatex** (pdflatex often fails on modern MiKTeX with fontawesome5 font-expansion errors). Cover letter compiled with **xelatex** (cover.cls requires fontspec).
-- [ ] **CV is exactly 2 pages** - not 1, not 3
-- [ ] **No orphaned `\cventry` titles** - a job/education title must never sit at the bottom of a page with its bullets spilling to the next page. Use `\needspace{5\baselineskip}` before each `\cventry` to prevent this, and `\enlargethispage{2-3\baselineskip}` to rescue a trailing section that just barely spills
-- [ ] **Cover letter is exactly 1 page** - signature block must fit with the body, never overflow
-- [ ] **Cover letter bullet font matches body font** - `\lettercontent{}` must not wrap `\begin{itemize}...\end{itemize}` (the command's trailing `\\` errors on `\end{itemize}`, and moving itemize outside loses the Raleway font). Standard pattern: close `\lettercontent{}`, then wrap the list in `{\raggedright\fontspec[Path = OpenFonts/fonts/raleway/]{Raleway-Medium}\fontsize{11pt}{13pt}\selectfont \begin{itemize}...\end{itemize}\par}`
+### Gate D - Parsing-risk reduction and document quality
+- [ ] Single-column reading order is preserved.
+- [ ] Essential information is not carried only by headers/footers, graphics, floating text boxes, or layout tables.
+- [ ] Standard dates and section labels are used.
+- [ ] No skill bars, rating graphics, white-text keywords, or keyword stuffing.
+- [ ] Final PDF contains selectable/extractable text.
+- [ ] No clipping, overlap, orphaned role titles, isolated headings, or broken page layouts.
+- [ ] Spelling and grammar are clean.
+
+### Gate E - Interview defensibility
+- [ ] Every high-salience metric has a known source/proof point.
+- [ ] Leadership and ownership wording has a clear boundary that can be defended.
+- [ ] Important technologies and domain claims can be explained with a concrete example.
+- [ ] Interview-defense sheet has been generated from the final resume.
+
+## Compiled PDF Verification - Mandatory
+
+The source file looking correct is not sufficient. Compile and visually inspect the final PDF before release.
+
+### Resume/CV
+- Compile using the method specified in `05-cv-templates.md`.
+- Inspect every page.
+- Verify no clipping, overlap, orphaned role/education titles, isolated section headings, or accidental large gaps.
+- Verify readable typography and spacing.
+- Confirm the PDF text is selectable/extractable.
+- Do not shrink fonts or margins below readable limits merely to hit a page count.
+
+### Cover letter
+- Compile using the method specified in `06-cover-letter-templates.md`.
+- Inspect the entire rendered page set.
+- Keep approximately one page unless content or local convention justifies otherwise.
+- Verify the signature block is visible and typography is consistent.
+
+## Final Output Package
+
+For serious applications, provide or retain:
+
+1. foundational resume;
+2. vacancy-tailored resume;
+3. vacancy requirement map;
+4. claim-grounding/evidence ledger;
+5. genuine gap list;
+6. cover letter, if requested;
+7. interview-defense sheet; and
+8. final QA checklist.
+
+The resume itself stays concise. Evidence, reasoning, and boundaries belong in supporting artifacts.
